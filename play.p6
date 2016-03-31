@@ -20,6 +20,9 @@ constant cl_device_type = uint32;
 constant cl_context_properties = Pointer;
 constant cl_program = uint64;
 constant cl_kernel = uint64;
+constant cl_command_queue_properties = uint64;
+constant cl_command_queue = uint64;
+constant cl_event = uint64;
 constant cl_context = Pointer[void];
 
 # CL Device Types
@@ -116,6 +119,10 @@ sub clBuildProgram(cl_program, cl_uint, CArray[cl_device_id], Str, &callback (cl
 
 sub clCreateKernel(cl_program, Str, cl_int is rw) returns cl_kernel is native(LIB) { * };
 
+sub clCreateCommandQueue(cl_context, cl_device_id, cl_command_queue_properties, cl_int is rw) returns cl_command_queue is native(LIB) { * };
+
+sub clEnqueueNDRangeKernel(cl_command_queue, cl_kernel, cl_uint, size_t is rw, size_t is rw, size_t is rw, cl_uint, CArray[cl_event], cl_event is rw) returns cl_int is native(LIB) { * };
+
 sub MAIN() {
   my cl_uint $type = 1;
   my cl_platform_id $id = 0;
@@ -127,8 +134,6 @@ sub MAIN() {
 
   my cl_context $device-context;
   my cl_int $err-code;
-
-  my cl_kernel $kernel;
 
   my cl_program $program;
   my @program-source := CArray[Str].new();
@@ -163,6 +168,10 @@ sub MAIN() {
   @program-lengths[0] = @program-source[0].chars;
   my cl_uint $program-lines = 1;
 
+  my cl_kernel $kernel;
+
+  my cl_command_queue $cmd-queue;
+
   # Get a device
   say "Query devices: " ~ (CL_SUCCESS == clGetPlatformIDs($type, $id, $number-of-entries));
   say "Number of OpenCL Devices: " ~ $number-of-entries;
@@ -183,5 +192,14 @@ sub MAIN() {
   # Create the kernel
   $kernel = clCreateKernel($program, "add_numbers", $err-code);
   say "Kernel created: " ~ ($err-code == CL_SUCCESS);
+
+  # Create the command queue
+  $cmd-queue = clCreateCommandQueue($device-context, $device-id[0], 0, $err-code);
+  say "Command Queue created: " ~ ($err-code == CL_SUCCESS);
+
+  # Enqueue...?
+  my size_t $global = 8;
+  my size_t $local = 4;
+  $err-code = clEnqueueNDRangeKernel($cmd-queue, $kernel, 1, $global, $local, size_t, CArray[cl_event], 0);
   say $err-code;
 }
