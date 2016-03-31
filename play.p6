@@ -19,7 +19,7 @@ constant cl_device_info = uint32;
 constant cl_device_type = uint32;
 constant cl_context_properties = Pointer;
 constant cl_program = uint64;
-
+constant cl_kernel = uint64;
 constant cl_context = Pointer[void];
 
 # CL Device Types
@@ -114,6 +114,8 @@ sub clCreateProgramWithSource(cl_context, cl_uint, CArray[Str], CArray[size_t], 
 
 sub clBuildProgram(cl_program, cl_uint, CArray[cl_device_id], Str, &callback (cl_program, Pointer[void]), Pointer[void]) returns cl_int is native(LIB) { * };
 
+sub clCreateKernel(cl_program, Str, cl_int is rw) returns cl_kernel is native(LIB) { * };
+
 sub MAIN() {
   my cl_uint $type = 1;
   my cl_platform_id $id = 0;
@@ -125,6 +127,8 @@ sub MAIN() {
 
   my cl_context $device-context;
   my cl_int $err-code;
+
+  my cl_kernel $kernel;
 
   my cl_program $program;
   my @program-source := CArray[Str].new();
@@ -175,5 +179,9 @@ sub MAIN() {
 
   $err-code = clBuildProgram($program, 0, CArray[cl_device_id], Str, Code, Pointer);
   say "Program compiled: " ~ ($err-code == CL_SUCCESS);
+
+  # Create the kernel
+  $kernel = clCreateKernel($program, "add_numbers", $err-code);
+  say "Kernel created: " ~ ($err-code == CL_SUCCESS);
   say $err-code;
 }
